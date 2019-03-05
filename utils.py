@@ -42,32 +42,41 @@ class ImagePool(object):
         else:
             return image
 
-def load_test_data(image_path, fine_size=256):
+def load_test_data(image_path, which_direction='AtoB', low_res_size=256, high_res_size=1024):
     img = imread(image_path)
-    img = scipy.misc.imresize(img, [fine_size, fine_size])
+    if which_direction == 'AtoB':
+        img = scipy.misc.imresize(img, [low_res_size, low_res_size])
+    else:
+        img = scipy.misc.imresize(img, [high_res_size, high_res_size])
     img = img/127.5 - 1
     return img
 
-def load_train_data(image_path, load_size=286, fine_size=256, is_testing=False):
+def load_train_data(image_path, load_low_size=286, load_high_size=1054, low_res_size=256, high_res_size=1024, is_testing=False):
     img_A = imread(image_path[0])
     img_B = imread(image_path[1])
     if not is_testing:
-        img_A = scipy.misc.imresize(img_A, [load_size, load_size])
-        img_B = scipy.misc.imresize(img_B, [load_size, load_size])
-        h1 = int(np.ceil(np.random.uniform(1e-2, load_size-fine_size)))
-        w1 = int(np.ceil(np.random.uniform(1e-2, load_size-fine_size)))
-        img_A = img_A[h1:h1+fine_size, w1:w1+fine_size]
-        img_B = img_B[h1:h1+fine_size, w1:w1+fine_size]
+        img_A = scipy.misc.imresize(img_A, [load_low_size, load_low_size])
+        img_B = scipy.misc.imresize(img_B, [load_high_size, load_high_size])
+
+        h1_low = int(np.ceil(np.random.uniform(1e-2, load_low_size-low_res_size)))
+        w1_low = int(np.ceil(np.random.uniform(1e-2, load_low_size-low_res_size)))
+        h1_high = int(np.ceil(np.random.uniform(1e-2, load_high_size-high_res_size)))
+        w1_high = int(np.ceil(np.random.uniform(1e-2, load_high_size-high_res_size)))
+        img_A = img_A[h1_low:h1_low+low_res_size, w1_low:w1_low+low_res_size]
+        img_B = img_B[h1_high:h1_high+high_res_size, w1_high:w1_high+high_res_size]
 
         if np.random.random() > 0.5:
             img_A = np.fliplr(img_A)
             img_B = np.fliplr(img_B)
     else:
-        img_A = scipy.misc.imresize(img_A, [fine_size, fine_size])
-        img_B = scipy.misc.imresize(img_B, [fine_size, fine_size])
+        img_A = scipy.misc.imresize(img_A, [low_res_size, low_res_size])
+        img_B = scipy.misc.imresize(img_B, [high_res_size, high_res_size])
 
     img_A = img_A/127.5 - 1.
     img_B = img_B/127.5 - 1.
+
+    img_A = np.concatenate((img_A, np.zeros((img_A.shape[0], high_res_size-low_res_size, img_A.shape[2]))), axis=1)
+    img_A = np.concatenate((img_A, np.zeros((high_res_size-low_res_size, img_A.shape[1], img_A.shape[2]))), axis=0)
 
     img_AB = np.concatenate((img_A, img_B), axis=2)
     # img_AB shape: (fine_size, fine_size, input_c_dim + output_c_dim)

@@ -14,27 +14,36 @@ class cyclegan(object):
     def __init__(self, sess, args):
         self.sess = sess
         self.batch_size = args.batch_size
-        self.image_size = args.fine_size
+        self.low_res_size = args.low_res_size
+        self.high_res_size = args.high_res_size
+        self.scale = args.scale;
         self.input_c_dim = args.input_nc
         self.output_c_dim = args.output_nc
         self.L1_lambda = args.L1_lambda
+        self.L2_lambda = args.L2_lambda
         self.dataset_dir = args.dataset_dir
+        self.perceptual_mode = args.perceptual_mode
 
-        self.discriminator = discriminator
-        if args.use_resnet:
-            self.generator = generator_resnet
-        else:
-            self.generator = generator_unet
+        # self.discriminator = discriminator
+        self.discriminator = discriminator_SRGAN
+        self.generator = generator_SRGAN
+        # if args.use_resnet:
+        #     self.generator = generator_resnet
+        # else:
+        #     self.generator = generator_unet
         if args.use_lsgan:
             self.criterionGAN = mae_criterion
         else:
             self.criterionGAN = sce_criterion
 
-        OPTIONS = namedtuple('OPTIONS', 'batch_size image_size \
-                              gf_dim df_dim output_c_dim is_training')
-        self.options = OPTIONS._make((args.batch_size, args.fine_size,
-                                      args.ngf, args.ndf, args.output_nc,
-                                      args.phase == 'train'))
+        OPTIONS = namedtuple('OPTIONS', 'batch_size low_res_size \
+                              high_res_size gf_dim df_dim output_c_dim \
+                              is_training scale')
+        self.options = OPTIONS._make((args.batch_size, args.low_res_size,
+                                      args.high_res_size, args.ngf, args.ndf, args.output_nc,
+                                      args.phase == 'train', args.scale))
+
+        # Note: A is low res, B is high res
 
         self._build_model()
         self.saver = tf.train.Saver()
@@ -42,37 +51,50 @@ class cyclegan(object):
 
     def _build_model(self):
         self.real_data = tf.placeholder(tf.float32,
-                                        [None, self.image_size, self.image_size,
+                                        [None, self.high_res_size, self.high_res_size,
                                          self.input_c_dim + self.output_c_dim],
                                         name='real_A_and_B_images')
 
-        self.real_A = self.real_data[:, :, :, :self.input_c_dim]
+        self.real_A = self.real_data[:, :self.low_res_size, :self.low_res_size, :self.input_c_dim]
         self.real_B = self.real_data[:, :, :, self.input_c_dim:self.input_c_dim + self.output_c_dim]
 
-        self.fake_B = self.generator(self.real_A, self.options, False, name="generatorA2B")
-        self.fake_A_ = self.generator(self.fake_B, self.options, False, name="generatorB2A")
-        self.fake_A = self.generator(self.real_B, self.options, True, name="generatorB2A")
-        self.fake_B_ = self.generator(self.fake_A, self.options, True, name="generatorA2B")
+        self.fake_B = self.generator(self.real_A, self.options, True, False, name="generatorA2B")
+        self.fake_A_ = self.generator(self.fake_B, self.options, False, False, name="generatorB2A")
+        self.fake_A = self.generator(self.real_B, self.options, False, True, name="generatorB2A")
+        self.fake_B_ = self.generator(self.fake_A, self.options, True, True, name="generatorA2B")
 
         self.DB_fake = self.discriminator(self.fake_B, self.options, reuse=False, name="discriminatorB")
         self.DA_fake = self.discriminator(self.fake_A, self.options, reuse=False, name="discriminatorA")
+
+        self.fake_A_features = VGG19(self.fake_A_, self.perceptual_mode, reuse=False, name='vgg19_fakeA', scope='vgg19_A')
+        self.real_A_features = VGG19(self.real_A, self.perceptual_mode, reuse=True, name='vgg19_realA', scope='vgg19_A')
+        self.fake_B_features = VGG19(self.fake_B_, self.perceptual_mode, reuse=False, name="vgg19_fakeB", scope='vgg19_B')
+        self.real_B_features = VGG19(self.real_B, self.perceptual_mode, reuse=True, name="vgg19_realB", scope='vgg19_B')
+
         self.g_loss_a2b = self.criterionGAN(self.DB_fake, tf.ones_like(self.DB_fake)) \
             + self.L1_lambda * abs_criterion(self.real_A, self.fake_A_) \
-            + self.L1_lambda * abs_criterion(self.real_B, self.fake_B_)
+            + self.L1_lambda * abs_criterion(self.real_B, self.fake_B_) \
+            + self.L2_lambda * perceptual_criterion(self.fake_A_features, self.real_A_features) \
+            + self.L2_lambda * perceptual_criterion(self.fake_B_features, self.real_B_features)
         self.g_loss_b2a = self.criterionGAN(self.DA_fake, tf.ones_like(self.DA_fake)) \
             + self.L1_lambda * abs_criterion(self.real_A, self.fake_A_) \
-            + self.L1_lambda * abs_criterion(self.real_B, self.fake_B_)
+            + self.L1_lambda * abs_criterion(self.real_B, self.fake_B_) \
+            + self.L2_lambda * perceptual_criterion(self.fake_A_features, self.real_A_features) \
+            + self.L2_lambda * perceptual_criterion(self.fake_B_features, self.real_B_features)
         self.g_loss = self.criterionGAN(self.DA_fake, tf.ones_like(self.DA_fake)) \
             + self.criterionGAN(self.DB_fake, tf.ones_like(self.DB_fake)) \
             + self.L1_lambda * abs_criterion(self.real_A, self.fake_A_) \
-            + self.L1_lambda * abs_criterion(self.real_B, self.fake_B_)
+            + self.L1_lambda * abs_criterion(self.real_B, self.fake_B_) \
+            + self.L2_lambda * perceptual_criterion(self.fake_A_features, self.real_A_features) \
+            + self.L2_lambda * perceptual_criterion(self.fake_B_features, self.real_B_features)
 
         self.fake_A_sample = tf.placeholder(tf.float32,
-                                            [None, self.image_size, self.image_size,
+                                            [None, self.low_res_size, self.low_res_size,
                                              self.input_c_dim], name='fake_A_sample')
         self.fake_B_sample = tf.placeholder(tf.float32,
-                                            [None, self.image_size, self.image_size,
+                                            [None, self.high_res_size, self.high_res_size,
                                              self.output_c_dim], name='fake_B_sample')
+
         self.DB_real = self.discriminator(self.real_B, self.options, reuse=True, name="discriminatorB")
         self.DA_real = self.discriminator(self.real_A, self.options, reuse=True, name="discriminatorA")
         self.DB_fake_sample = self.discriminator(self.fake_B_sample, self.options, reuse=True, name="discriminatorB")
@@ -104,13 +126,14 @@ class cyclegan(object):
         )
 
         self.test_A = tf.placeholder(tf.float32,
-                                     [None, self.image_size, self.image_size,
+                                     [None, self.low_res_size, self.low_res_size,
                                       self.input_c_dim], name='test_A')
         self.test_B = tf.placeholder(tf.float32,
-                                     [None, self.image_size, self.image_size,
+                                     [None, self.high_res_size, self.high_res_size,
                                       self.output_c_dim], name='test_B')
-        self.testB = self.generator(self.test_A, self.options, True, name="generatorA2B")
-        self.testA = self.generator(self.test_B, self.options, True, name="generatorB2A")
+
+        self.testB = self.generator(self.test_A, self.options, True, True, name="generatorA2B")
+        self.testA = self.generator(self.test_B, self.options, False, True, name="generatorB2A")
 
         t_vars = tf.trainable_variables()
         self.d_vars = [var for var in t_vars if 'discriminator' in var.name]
@@ -149,7 +172,7 @@ class cyclegan(object):
             for idx in range(0, batch_idxs):
                 batch_files = list(zip(dataA[idx * self.batch_size:(idx + 1) * self.batch_size],
                                        dataB[idx * self.batch_size:(idx + 1) * self.batch_size]))
-                batch_images = [load_train_data(batch_file, args.load_size, args.fine_size) for batch_file in batch_files]
+                batch_images = [load_train_data(batch_file, args.load_low_size, args.load_high_size, args.low_res_size, args.high_res_size) for batch_file in batch_files]
                 batch_images = np.array(batch_images).astype(np.float32)
 
                 # Update G network and record fake outputs
@@ -180,7 +203,7 @@ class cyclegan(object):
 
     def save(self, checkpoint_dir, step):
         model_name = "cyclegan.model"
-        model_dir = "%s_%s" % (self.dataset_dir, self.image_size)
+        model_dir = "%s_%s" % (self.dataset_dir, self.scale * self.scale)
         checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
 
         if not os.path.exists(checkpoint_dir):
@@ -193,7 +216,7 @@ class cyclegan(object):
     def load(self, checkpoint_dir):
         print(" [*] Reading checkpoint...")
 
-        model_dir = "%s_%s" % (self.dataset_dir, self.image_size)
+        model_dir = "%s_%s" % (self.dataset_dir, self.scale * self.scale)
         checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
 
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
@@ -249,7 +272,7 @@ class cyclegan(object):
 
         for sample_file in sample_files:
             print('Processing image: ' + sample_file)
-            sample_image = [load_test_data(sample_file, args.fine_size)]
+            sample_image = [load_test_data(sample_file, args.which_direction, args.low_res_size, args.high_res_size)]
             sample_image = np.array(sample_image).astype(np.float32)
             image_path = os.path.join(args.test_dir,
                                       '{0}_{1}'.format(args.which_direction, os.path.basename(sample_file)))
