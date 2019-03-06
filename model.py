@@ -14,6 +14,8 @@ class cyclegan(object):
     def __init__(self, sess, args):
         self.sess = sess
         self.batch_size = args.batch_size
+        self.load_low_size = args.load_low_size
+        self.load_high_size = args.load_high_size
         self.low_res_size = args.low_res_size
         self.high_res_size = args.high_res_size
         self.scale = args.scale;
@@ -233,7 +235,7 @@ class cyclegan(object):
         np.random.shuffle(dataA)
         np.random.shuffle(dataB)
         batch_files = list(zip(dataA[:self.batch_size], dataB[:self.batch_size]))
-        sample_images = [load_train_data(batch_file, is_testing=True) for batch_file in batch_files]
+        sample_images = [load_train_data(batch_file, self.load_low_size, self.load_high_size, self.low_res_size, self.high_res_size, is_testing=True) for batch_file in batch_files]
         sample_images = np.array(sample_images).astype(np.float32)
 
         fake_A, fake_B = self.sess.run(
