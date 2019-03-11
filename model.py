@@ -14,11 +14,11 @@ class cyclegan(object):
     def __init__(self, sess, args):
         self.sess = sess
         self.batch_size = args.batch_size
-        self.load_low_size = args.load_low_size
-        self.load_high_size = args.load_high_size
         self.low_res_size = args.low_res_size
-        self.high_res_size = args.high_res_size
+        self.load_low_size = self.low_res_size + self.res_offset
         self.scale = args.scale;
+        self.high_res_size = args.low_res_size * self.scale * self.scale
+        self.load_high_size = self.low_res_size + self.res_offset
         self.input_c_dim = args.input_nc
         self.output_c_dim = args.output_nc
         self.L1_lambda = args.L1_lambda
@@ -26,13 +26,8 @@ class cyclegan(object):
         self.dataset_dir = args.dataset_dir
         self.perceptual_mode = args.perceptual_mode
 
-        # self.discriminator = discriminator
         self.discriminator = discriminator_SRGAN
         self.generator = generator_SRGAN
-        # if args.use_resnet:
-        #     self.generator = generator_resnet
-        # else:
-        #     self.generator = generator_unet
         if args.use_lsgan:
             self.criterionGAN = mae_criterion
         else:
@@ -174,7 +169,7 @@ class cyclegan(object):
             for idx in range(0, batch_idxs):
                 batch_files = list(zip(dataA[idx * self.batch_size:(idx + 1) * self.batch_size],
                                        dataB[idx * self.batch_size:(idx + 1) * self.batch_size]))
-                batch_images = [load_train_data(batch_file, args.load_low_size, args.load_high_size, args.low_res_size, args.high_res_size) for batch_file in batch_files]
+                batch_images = [load_train_data(batch_file, self.load_low_size, self.load_high_size, self.low_res_size, self.high_res_size) for batch_file in batch_files]
                 batch_images = np.array(batch_images).astype(np.float32)
 
                 # Update G network and record fake outputs
