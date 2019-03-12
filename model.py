@@ -18,7 +18,7 @@ class cyclegan(object):
         self.load_low_size = self.low_res_size + self.res_offset
         self.scale = args.scale;
         self.high_res_size = args.low_res_size * self.scale * self.scale
-        self.load_high_size = self.low_res_size + self.res_offset
+        self.load_high_size = self.low_res_size + args.res_offset
         self.input_c_dim = args.input_nc
         self.output_c_dim = args.output_nc
         self.L1_lambda = args.L1_lambda
