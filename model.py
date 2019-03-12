@@ -15,7 +15,7 @@ class cyclegan(object):
         self.sess = sess
         self.batch_size = args.batch_size
         self.low_res_size = args.low_res_size
-        self.load_low_size = self.low_res_size + self.res_offset
+        self.load_low_size = self.low_res_size + args.res_offset
         self.scale = args.scale;
         self.high_res_size = args.low_res_size * self.scale * self.scale
         self.load_high_size = self.low_res_size + args.res_offset
