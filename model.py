@@ -37,7 +37,7 @@ class cyclegan(object):
                               high_res_size gf_dim df_dim output_c_dim \
                               is_training scale')
         self.options = OPTIONS._make((args.batch_size, args.low_res_size,
-                                      args.high_res_size, args.ngf, args.ndf, args.output_nc,
+                                      self.high_res_size, args.ngf, args.ndf, args.output_nc,
                                       args.phase == 'train', args.scale))
 
         # Note: A is low res, B is high res
