@@ -15,10 +15,8 @@ class cyclegan(object):
         self.sess = sess
         self.batch_size = args.batch_size
         self.low_res_size = args.low_res_size
-        self.load_low_size = self.low_res_size + args.res_offset
         self.scale = args.scale;
         self.high_res_size = args.low_res_size * self.scale * self.scale
-        self.load_high_size = self.high_res_size + args.res_offset
         self.input_c_dim = args.input_nc
         self.output_c_dim = args.output_nc
         self.L1_lambda = args.L1_lambda
@@ -169,7 +167,7 @@ class cyclegan(object):
             for idx in range(0, batch_idxs):
                 batch_files = list(zip(dataA[idx * self.batch_size:(idx + 1) * self.batch_size],
                                        dataB[idx * self.batch_size:(idx + 1) * self.batch_size]))
-                batch_images = [load_train_data(batch_file, self.load_low_size, self.load_high_size, self.low_res_size, self.high_res_size) for batch_file in batch_files]
+                batch_images = [load_train_data(batch_file, self.low_res_size, self.high_res_size) for batch_file in batch_files]
                 batch_images = np.array(batch_images).astype(np.float32)
 
                 # Update G network and record fake outputs
@@ -230,7 +228,7 @@ class cyclegan(object):
         np.random.shuffle(dataA)
         np.random.shuffle(dataB)
         batch_files = list(zip(dataA[:self.batch_size], dataB[:self.batch_size]))
-        sample_images = [load_train_data(batch_file, self.load_low_size, self.load_high_size, self.low_res_size, self.high_res_size, is_testing=True) for batch_file in batch_files]
+        sample_images = [load_train_data(batch_file, self.low_res_size, self.high_res_size, is_testing=True) for batch_file in batch_files]
         sample_images = np.array(sample_images).astype(np.float32)
 
         fake_A, fake_B = self.sess.run(

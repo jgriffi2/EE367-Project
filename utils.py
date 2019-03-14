@@ -51,19 +51,12 @@ def load_test_data(image_path, which_direction='AtoB', low_res_size=256, high_re
     img = img/127.5 - 1
     return img
 
-def load_train_data(image_path, load_low_size=286, load_high_size=1054, low_res_size=256, high_res_size=1024, is_testing=False):
+def load_train_data(image_path, low_res_size=256, high_res_size=1024, is_testing=False):
     img_A = imread(image_path[0])
     img_B = imread(image_path[1])
     if not is_testing:
-        img_A = scipy.misc.imresize(img_A, [load_low_size, load_low_size])
-        img_B = scipy.misc.imresize(img_B, [load_high_size, load_high_size])
-
-        h1_low = int(np.ceil(np.random.uniform(1e-2, load_low_size-low_res_size)))
-        w1_low = int(np.ceil(np.random.uniform(1e-2, load_low_size-low_res_size)))
-        h1_high = int(np.ceil(np.random.uniform(1e-2, load_high_size-high_res_size)))
-        w1_high = int(np.ceil(np.random.uniform(1e-2, load_high_size-high_res_size)))
-        img_A = img_A[h1_low:h1_low+low_res_size, w1_low:w1_low+low_res_size]
-        img_B = img_B[h1_high:h1_high+high_res_size, w1_high:w1_high+high_res_size]
+        img_A = scipy.misc.imresize(img_A, [low_res_size, low_res_size])
+        img_B = scipy.misc.imresize(img_B, [high_res_size, high_res_size])
 
         if np.random.random() > 0.5:
             img_A = np.fliplr(img_A)
