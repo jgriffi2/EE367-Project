@@ -15,7 +15,6 @@ def discriminator_SRGAN(image, options, reuse=False, name="discriminator"):
 
         h0 = lrelu(conv2d(image, options.df_dim, ks=3, s=1, name='d_h0_conv'))
         # h0 is (H x W x self.df_dim)
-        # TODO: maybe use batchnorm instead of instance norm?
         h1 = lrelu(batch_norm(conv2d(h0, options.df_dim, s=3, name='d_h1_conv'), 'd_bn1'))
         # h1 is (H/2 x W/2 x self.df_dim)
         h2 = lrelu(batch_norm(conv2d(h1, options.df_dim*2, ks=3, s=1, name='d_h2_conv'), 'd_bn2'))
@@ -81,17 +80,13 @@ def generator_SRGAN(image, options, A2B=True, reuse=False, name="generator"):
 
         scale = options.scale if A2B else 1 / options.scale
         if (scale >= 1):
-            # c3 = prelu_tf(pixelShuffler(conv2d(c2, 256, s=1, name='g_e3_c'), scale=scale), name='g_e3_prelu')
             c3 = prelu_tf(tf.depth_to_space(conv2d(c2, 256, s=1, name='g_e3_c'), scale), name='g_e3_prelu')
             # c3 is (H*scale x W*scale x 256)
-            # c4 = prelu_tf(pixelShuffler(conv2d(c3, 256, s=1, name='g_e4_c'), scale=scale), name='g_e4_prelu')
             c4 = prelu_tf(tf.depth_to_space(conv2d(c3, 256, s=1, name='g_e4_c'), scale), name='g_e4_prelu')
             # c4 is (H*scale*scale x W*scale*scale x 256)
         else:
-            # c3 = prelu_tf(pixelShuffler(conv2d(c2, 256, s=1, name='g_e3_c'), scale=scale), name='g_e3_prelu')
             c3 = prelu_tf(conv2d(c2, 256, s=options.scale, name='g_e3_c'), name='g_e3_prelu')
             # c3 is (H*scale x W*scale x 256)
-            # c4 = prelu_tf(pixelShuffler(conv2d(c3, 256, s=1, name='g_e4_c'), scale=scale), name='g_e4_prelu')
             c4 = prelu_tf(conv2d(c3, 256, s=options.scale, name='g_e4_c'), name='g_e4_prelu')
             # c4 is (H*scale*scale x W*scale*scale x 256)
 

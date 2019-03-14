@@ -84,11 +84,11 @@ class cyclegan(object):
             + self.L2_lambda * perceptual_criterion(self.fake_B_features, self.real_B_features)
 
         self.fake_A_sample = tf.placeholder(tf.float32,
-                                            [None, self.low_res_size, self.low_res_size,
-                                             self.input_c_dim], name='fake_A_sample')
+                                            [None, self.low_res_size, self.low_res_size, self.input_c_dim],
+                                            name='fake_A_sample')
         self.fake_B_sample = tf.placeholder(tf.float32,
-                                            [None, self.high_res_size, self.high_res_size,
-                                             self.output_c_dim], name='fake_B_sample')
+                                            [None, self.high_res_size, self.high_res_size, self.output_c_dim],
+                                            name='fake_B_sample')
 
         self.DB_real = self.discriminator(self.real_B, self.options, reuse=True, name="discriminatorB")
         self.DA_real = self.discriminator(self.real_A, self.options, reuse=True, name="discriminatorA")
@@ -267,7 +267,7 @@ class cyclegan(object):
 
         for sample_file in sample_files:
             print('Processing image: ' + sample_file)
-            sample_image = [load_test_data(sample_file, args.which_direction, args.low_res_size, args.high_res_size)]
+            sample_image = [load_test_data(sample_file)]
             sample_image = np.array(sample_image).astype(np.float32)
             image_path = os.path.join(args.test_dir,
                                       '{0}_{1}'.format(args.which_direction, os.path.basename(sample_file)))

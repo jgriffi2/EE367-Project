@@ -9,28 +9,11 @@ from utils import *
 def batch_norm(x, name="batch_norm"):
     return tf.contrib.layers.batch_norm(x, decay=0.9, updates_collections=None, epsilon=1e-5, scale=True, scope=name)
 
-def instance_norm(input, name="instance_norm"):
-    with tf.variable_scope(name):
-        depth = input.get_shape()[3]
-        scale = tf.get_variable("scale", [depth], initializer=tf.random_normal_initializer(1.0, 0.02, dtype=tf.float32))
-        offset = tf.get_variable("offset", [depth], initializer=tf.constant_initializer(0.0))
-        mean, variance = tf.nn.moments(input, axes=[1,2], keep_dims=True)
-        epsilon = 1e-5
-        inv = tf.rsqrt(variance + epsilon)
-        normalized = (input-mean)*inv
-        return scale*normalized + offset
-
 def conv2d(input_, output_dim, ks=4, s=2, stddev=0.02, padding='SAME', name="conv2d"):
     with tf.variable_scope(name):
         return slim.conv2d(input_, output_dim, ks, s, padding=padding, activation_fn=None,
                             weights_initializer=tf.truncated_normal_initializer(stddev=stddev),
                             biases_initializer=None)
-
-def deconv2d(input_, output_dim, ks=4, s=2, stddev=0.02, name="deconv2d"):
-    with tf.variable_scope(name):
-        return slim.conv2d_transpose(input_, output_dim, ks, s, padding='SAME', activation_fn=None,
-                                    weights_initializer=tf.truncated_normal_initializer(stddev=stddev),
-                                    biases_initializer=None)
 
 def lrelu(x, leak=0.2, name="lrelu"):
     return tf.maximum(x, leak*x)
@@ -48,36 +31,6 @@ def sigmoid(x, name='sigmoid'):
 
 def linear(x, output_size, scope=None):
     return tf.contrib.layers.fully_connected(x, output_size, scope=scope)
-
-def pixelShuffler(inputs, scale=2):
-    size = tf.shape(inputs)
-    batch_size = size[0]
-    h = size[1]
-    w = size[2]
-    c = inputs.get_shape().as_list()[-1]
-
-    hshape = inputs.get_shape().as_list()[1]
-    wshape = inputs.get_shape().as_list()[2]
-
-    # Get the target channel size
-    channel_target = c // (scale * scale)
-    channel_factor = c // channel_target
-
-    shape_1 = [batch_size, h, w, channel_factor // scale, channel_factor // scale]
-    shape_2 = [batch_size, hshape * scale, wshape * scale, 1]
-
-    # Reshape and transpose for periodic shuffling for each channel
-    input_split = tf.split(inputs, int(channel_target), axis=3)
-    output = tf.concat([phaseShift(x, scale, shape_1, shape_2) for x in input_split], axis=3)
-
-    return output
-
-def phaseShift(inputs, scale, shape_1, shape_2):
-    # Tackle the condition when the batch is None
-    X = tf.reshape(inputs, shape_1)
-    X = tf.transpose(X, [0, 1, 3, 2, 4])
-
-    return tf.reshape(X, shape_2)
 
 def vgg_19(inputs,
            num_classes=1000,
