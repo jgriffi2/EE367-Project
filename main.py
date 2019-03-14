@@ -10,7 +10,7 @@ parser.add_argument('--epoch', dest='epoch', type=int, default=200, help='# of e
 parser.add_argument('--epoch_step', dest='epoch_step', type=int, default=100, help='# of epoch to decay lr')
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=1, help='# images in batch')
 parser.add_argument('--train_size', dest='train_size', type=int, default=1e8, help='# images used to train')
-parser.add_argument('--low_res_size', dest='low_res_size', type=int, default=256, help='crop to this low resolution image size')
+parser.add_argument('--low_res_size', dest='low_res_size', type=int, default=64, help='crop to this low resolution image size')
 parser.add_argument('--ngf', dest='ngf', type=int, default=64, help='# of gen filters in first conv layer')
 parser.add_argument('--ndf', dest='ndf', type=int, default=64, help='# of discri filters in first conv layer')
 parser.add_argument('--input_nc', dest='input_nc', type=int, default=3, help='# of input image channels')
