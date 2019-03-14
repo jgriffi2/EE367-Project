@@ -1,5 +1,4 @@
 <br><br><br>
--->
 # CycleSRGAN
 
 Tensorflow implementation for learning a low resolution image to high resolution image translation **without** input-output pairs.
