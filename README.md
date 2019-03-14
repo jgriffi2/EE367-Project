@@ -20,9 +20,13 @@ cd EE367-Project
 ```
 
 ### VGG model
-- Download the vgg19 weight from [TF-slim model](http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz)
-- Make directory named 'vgg19'
-- Put vgg_19 model in directory
+Download vgg model:
+```bash
+mkdir vgg19
+cd vgg19
+wget http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz
+tar xvf ./vgg19_2016_08_28.tar.gz
+```
 
 ### Train
 - Dataset is available in repo (but is a small dataset)
