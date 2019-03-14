@@ -19,6 +19,11 @@ git clone https://github.com/jgriffi2/EE367-Project/
 cd EE367-Project
 ```
 
+### VGG model
+- Download the vgg19 weight from [TF-slim model](http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz)
+- Make directory named 'vgg19'
+- Put vgg_19 model in directory
+
 ### Train
 - Dataset is available in repo (but is a small dataset)
 - Train a model:
