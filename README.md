@@ -3,7 +3,7 @@
 
 Tensorflow implementation for learning a low resolution image to high resolution image translation **without** input-output pairs.
 The CycleGAN method is proposed by [Jun-Yan Zhu](https://people.eecs.berkeley.edu/~junyanz/) in 
-[Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networkssee](https://arxiv.org/pdf/1703.10593.pdf) and the SRGAN method is proposed by [Christian Ledig](http://www.christianledig.com/) in [Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network](https://arxiv.org/pdf/1609.04802.pdf).
+[Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks](https://arxiv.org/pdf/1703.10593.pdf) and the SRGAN method is proposed by [Christian Ledig](http://www.christianledig.com/) in [Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network](https://arxiv.org/pdf/1609.04802.pdf).
 
 ## Prerequisites
 - tensorflow r1.1
